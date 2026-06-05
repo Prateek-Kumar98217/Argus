@@ -3,9 +3,9 @@ services:
     image: pgvector/pgvector:pg16
     container_name: graphrag-postgres
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=localpassword123
-      - POSTGRES_DB=graphrag_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=g${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
