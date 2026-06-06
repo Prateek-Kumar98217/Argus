@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS edges(
     source_node_id UUID REFERENCES nodes(id) ON DELETE CASCADE,
     target_node_id UUID REFERENCES nodes(id) on DELETE CASCADE,
     relationship_type VARCHAR(100),
-    DESCRIPTION TEXT,
+    description TEXT,
+    source_chunk_id UUID REFERENCES chunks(id) on DELETE CASCADE,
     UNIQUE( source_node_id, target_node_id, relationship_type)
 );
 
