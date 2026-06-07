@@ -21,13 +21,13 @@ SEED_NODE_QUERY=text(
 RECURSIVE_TRAVERSAL_QUERY=text(
     """
         WITH RECURSIVE graph_traversal AS (
-            SELECT id, name, description, 0 AS depth, ARRAY[id] AS visited 
+            SELECT id, 0 AS depth, ARRAY[id] AS visited 
             FROM nodes
             WHERE id = ANY(:seed_node_ids::uuid[])
 
             UNION ALL
 
-            SELECT n.id, n.name, n.description, gt.depth + 1, gt.visited || n.id
+            SELECT n.id, gt.depth + 1, gt.visited || n.id
             FROM graph_traversal gt
             JOIN edges e ON gt.id = e.source_node_id
             JOIN nodes n ON e.target_node_id = n.id
