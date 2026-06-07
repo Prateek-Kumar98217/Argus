@@ -1,7 +1,8 @@
-#Raw queries related to retrieval, injestion dont need raw queries
+#Keeping queries seprate from teh code as possible
 
 
-from sqlalchemy import text
+from sqlalchemy import text, select, func
+from app.knowledge_base.db.models import Node, Edge
 
 SEED_NODE_QUERY=text(
     """
@@ -43,3 +44,18 @@ RECURSIVE_TRAVERSAL_QUERY=text(
     """
 )
 #parameters: seed_node_ids, max_depth
+
+
+NODES = select(
+    Node.name
+)
+
+NODE_TYPES = select(
+    Node.type,
+    func.count(Node.id).label("type_count").group_by(Node.type)
+)
+
+EDGE_TYPES = select(
+    Edge.realationship_type,
+    func.count(Edge.id).label("type_count").group_by(Edge.realationship_type)
+)

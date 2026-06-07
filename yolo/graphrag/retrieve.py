@@ -38,14 +38,13 @@ def retrieve(query: str) -> str:
                 return ""
             traversal_query = """
                 WITH RECURSIVE graph_traversal AS (
-                    -- Anchor Member: Start with our matched seed nodes
+                
                     SELECT id, name, description, 0 AS depth, ARRAY[id] AS visited 
                     FROM nodes
                     WHERE id = ANY(%s::uuid[])
                     
                     UNION ALL
                     
-                    -- Recursive Member: Follow edges to find adjacent connected nodes
                     SELECT n.id, n.name, n.description, gt.depth + 1, gt.visited || n.id
                     FROM graph_traversal gt
                     JOIN edges e ON gt.id = e.source_node_id
@@ -56,7 +55,6 @@ def retrieve(query: str) -> str:
                 discovered_nodes AS (
                     SELECT DISTINCT id FROM graph_traversal
                 )
-                -- Fetch the original source text chunks for all discovered sub-graph nodes
                 SELECT DISTINCT c.context
                 FROM chunks c
                 JOIN nodes n ON n.source_chunk_id = c.id
