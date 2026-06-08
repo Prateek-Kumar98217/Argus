@@ -4,7 +4,7 @@ import psycopg2
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
-from yolo.graphrag.graph_state import GraphState
+from prototypes.graphrag.graph_state import GraphState
 
 DB_URI = "postgresql://admin:localpassword123@localhost:5432/graphrag_db"
 

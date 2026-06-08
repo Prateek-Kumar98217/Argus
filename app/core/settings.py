@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str
 
     EMBED_MODEL: str = "gemini-embedding-2"
+    EXTRACT_MODEL: str = "gemini-3.1-flash-lite"
 
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str

@@ -13,7 +13,7 @@ class Retriever:
     def __init__(self, graph_state: GraphState, embed_dim: int = 768, limit: int = 3, max_depth: int = 2):
         self.state = graph_state
         self.embedding_model = settings.EMBED_MODEL
-        self.client = genai.Client()
+        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
         self.embed_dim = embed_dim
         self.is_initialized = False
         #limit defines the max intial chunks got from vector search
