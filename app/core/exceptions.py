@@ -11,10 +11,15 @@ class NotInitializedError(GraphStateError):
 class NodeConflictError(GraphStateError):
     pass
 
-#Retriever related exceptions
 
+#Retriever related exceptions
 class RetrieverError(Exception):
     pass
 
 class NoContextError(RetrieverError):
+    pass
+
+
+#Ingestion related exceptions
+class FileNotSupportedError(Exception):
     pass
