@@ -14,8 +14,10 @@ from app.knowledge_base.prompts import EXTRACTION_SYSTEM_PROMPT, EXTRACTION_TASK
 
 @dataclass
 class BatchedResult:
-    extraction: KnowledgeGraphExtraction
+    chunks: list[str]
     embeddings: list[list[float]]
+    extraction: KnowledgeGraphExtraction
+    
 
 class ExtractionService:
     def __init__(self, graph_state: GraphState, embed_dim: int = 768):
@@ -35,12 +37,9 @@ class ExtractionService:
 
 
     async def _process_single_batch(self, batch: list[str])-> BatchedResult | None:
-        extraction_task = self._extract_with_retry(batch)
-        embedding_task = self._embed_chunks(batch)
-
         extraction, embeddings = asyncio.gather(
-            extraction_task,
-            embedding_task,
+            self._extract_with_retry(batch),
+            self._embed_chunks(batch),
             return_exceptions=False,
         )
 
@@ -48,7 +47,7 @@ class ExtractionService:
             #Need a new exception for this
             return None
         
-        return BatchedResult(extraction=extraction, embeddings=embeddings)
+        return BatchedResult(chunks=batch, embeddings=embeddings, extraction=extraction)
     
 
     def _build_prompt(self, chunk_batch: list[str])-> str:
