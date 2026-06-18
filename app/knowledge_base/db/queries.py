@@ -52,10 +52,10 @@ NODES = select(
 
 NODE_TYPES = select(
     Node.type,
-    func.count(Node.id).label("type_count").group_by(Node.type)
-)
+    func.count(Node.id).label("type_count")
+).group_by(Node.type)
 
 EDGE_TYPES = select(
-    Edge.realationship_type,
-    func.count(Edge.id).label("type_count").group_by(Edge.realationship_type)
-)
+    Edge.relationship_type,
+    func.count(Edge.id).label("type_count")
+).group_by(Edge.relationship_type)

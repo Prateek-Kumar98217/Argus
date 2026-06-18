@@ -3,7 +3,7 @@ import instructor
 
 from google import genai
 from google.genai import types
-from dataclasses import dataclass
+from pydantic import BaseModel
 from collections.abc import AsyncIterator
 
 from app.core.settings import settings
@@ -12,8 +12,7 @@ from app.knowledge_base.schemas import KnowledgeGraphExtraction
 from app.knowledge_base.prompts import EXTRACTION_SYSTEM_PROMPT, EXTRACTION_TASK_PROMPT
 
 
-@dataclass
-class BatchedResult:
+class BatchedResult(BaseModel):
     chunks: list[str]
     embeddings: list[list[float]]
     extraction: KnowledgeGraphExtraction
@@ -24,7 +23,7 @@ class ExtractionService:
         self._state = graph_state
         self._embed_dim = embed_dim
         self._raw_client = genai.Client(api_key=settings.GEMINI_API_KEY)
-        self._instructor_client = instructor.from_genai(client=self.raw_client, async_client = True)
+        self._instructor_client = instructor.from_genai(client=self._raw_client)
         self._extraction_model = settings.EXTRACT_MODEL
         self._embedding_model = settings.EMBED_MODEL
 
@@ -37,7 +36,7 @@ class ExtractionService:
 
 
     async def _process_single_batch(self, batch: list[str])-> BatchedResult | None:
-        extraction, embeddings = asyncio.gather(
+        extraction, embeddings = await asyncio.gather(
             self._extract_with_retry(batch),
             self._embed_chunks(batch),
             return_exceptions=False,
@@ -52,8 +51,8 @@ class ExtractionService:
 
     def _build_prompt(self, chunk_batch: list[str])-> str:
         node_types = ", ".join(self._state.node_types.keys()) or "None yet"
-        edge_types = ", ".join(self.state.edge_types.keys()) or "None yet"
-        existing_nodes = ", ".join(self.state.nodes) or "None yet"
+        edge_types = ", ".join(self._state.edge_types.keys()) or "None yet"
+        existing_nodes = ", ".join(self._state.nodes) or "None yet"
 
         batched_chunks_text = "".join(
             f'<chunk id="chunk_id">\n{chunk_text}\n</chunk>'
@@ -70,11 +69,11 @@ class ExtractionService:
 
     async def _extract_with_retry(self, batch: list[str], retries: int = 2)->KnowledgeGraphExtraction | None:
         prompt = self._build_prompt(batch)
-        last_exc = Exception | None = None
+        last_exc: Exception | None = None
 
         for attempt in range(retries):
             try:
-                return await self._instructor_client.create(
+                return await asyncio.to_thread(self._instructor_client.create,
                     model=self._extraction_model,
                     response_model=KnowledgeGraphExtraction,
                     messages=[
@@ -97,7 +96,7 @@ class ExtractionService:
             response = await self._raw_client.aio.models.embed_content(
                 model=self._embedding_model,
                 contents=chunks,
-                config=types.EmbeddingContentConfig(
+                config=types.EmbedContentConfig(
                     output_dimensionality=self._embed_dim
                 )
             )
