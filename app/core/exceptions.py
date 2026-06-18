@@ -8,9 +8,6 @@ class GraphStateError(Exception):
 class NotInitializedError(GraphStateError):
     pass
 
-class NodeConflictError(GraphStateError):
-    pass
-
 
 #Retriever related exceptions
 class RetrieverError(Exception):

@@ -1,5 +1,5 @@
 # app/knowledge_base/schemas.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class NodeExtraction(BaseModel):
     name: str = Field(
@@ -25,6 +25,14 @@ class EdgeExtraction(BaseModel):
     description: str = Field(
         description="A brief, one-sentence description explaining why or how these two entities(from source to target only) are connected based on the text."
     )
+
+    @field_validator("source_node", "target_node", mode="after")
+    @classmethod
+    def normalize_node_names(cls, v: str)->str:
+        clean_names = v.replace("target_node:", "").replace("source_node:", "")
+        clean_name = clean_names.split(",")[0]
+        return clean_name.strip()
+
 
 class ChunkGraph(BaseModel):
     chunk_id: int = Field(

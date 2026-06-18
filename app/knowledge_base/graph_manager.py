@@ -4,13 +4,13 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.knowledge_base.state import GraphState
 from app.knowledge_base.db.engine import AsyncSessionLocal
-from app.knowledge_base.db.models import Chunk, Node, Edge
+from app.knowledge_base.db.models import Chunk, Node, Edge, NodeToChunks
 from app.knowledge_base.ingestion import Chunker, DocumentReader, ExtractionService
 from app.knowledge_base.ingestion.extractor import BatchedResult
 
 
 class GraphManager:
-    def __init__(self, graph_state: GraphState, chunk_size: int = 300, batch_size: int = 5, embed_dim: int = 768)-> None:
+    def __init__(self, graph_state: GraphState, chunk_size: int = 100, batch_size: int = 5, embed_dim: int = 768)-> None:
         self._state = graph_state
         self._reader = DocumentReader()
         self._chunker = Chunker(chunk_size=chunk_size)
@@ -35,6 +35,7 @@ class GraphManager:
                 node_name_to_uuid = await self._upsert_nodes(session, result, chunk_uuids)
                 await self._upsert_edges(session, result, node_name_to_uuid)
                 await session.commit()
+                self._check_state()
             except Exception as exc:
                 await session.rollback()
                 raise RuntimeError(
@@ -64,14 +65,12 @@ class GraphManager:
         node_name_to_uuid: dict[str, uuid.UUID] = {}
         for chunk in result.extraction.extracted_batches:
             for node in chunk.nodes:
-                source_chunk_uuid = chunk_uuids[node.source_chunk_index]
                 stmt=(
                     pg_insert(Node).values(
                         id=uuid.uuid4(),
                         name=node.name,
                         type=node.type,
                         description=node.description,
-                        source_chunk_id=source_chunk_uuid,
                     ).on_conflict_do_update(
                         index_elements=["name"],
                         set_ = {"description": node.description}
@@ -89,7 +88,7 @@ class GraphManager:
                 source_node_uuid = node_name_to_uuid.get(edge.source_node)
                 target_node_uuid = node_name_to_uuid.get(edge.target_node)
 
-                if source_node_uuid is None or target_node_uuid is None:
+                if not source_node_uuid or not target_node_uuid:
                     print(f"[Graph Manager] Skipping edge '{edge.source_node}' -> '{edge.target_node}': One or both nodes not yet persisted")
                     continue
 
@@ -99,15 +98,22 @@ class GraphManager:
                     target_node_id = target_node_uuid,
                     relationship_type = edge.type,
                     description = edge.description,
-                ).on_conflict_do_nothing(constraint="unique_source_target_rel")
+                ).on_conflict_do_nothing(index_elements=["source_node_id", "target_node_id", "relationship_type"])
 
-            await session.execute(stmt)
+                await session.execute(stmt)
 
 
     def _apply_to_state(self, result: BatchedResult):
-        for node in result.extraction.nodes:
-            self._state.update_nodes(node.name)
-            self._state.update_node_types(node.type)
+        for batch in result.extraction.extracted_batches:
+            for node in batch.nodes:
+                self._state.update_nodes(node.name)
+                self._state.update_node_types(node.type)
 
-        for edge in result.extraction.edges:
-            self._state.update_edge_types(edge.type)
+        for batch in result.extraction.extracted_batches:
+            for edge in batch.edges:
+                self._state.update_edge_types(edge.type)
+
+    def _check_state(self):
+        print(f"NODES: {self._state.nodes}")
+        print(f"NODE TYPES: {self._state.node_types}")
+        print(f"EDGE_TYPES: {self._state.edge_types}")

@@ -9,7 +9,7 @@ async def run_manager_test():
         node_types={"Company": 0, "Job": 0, "Skill": 0, "Incentive": 0}, 
         edge_types={"REQUIRES": 0, "GIVES": 0, "PREFERES": 0}
     )
-    test_manager = GraphManager(graph_state=test_state, chunk_size=200, batch_size=4)
+    test_manager = GraphManager(graph_state=test_state, chunk_size=100, batch_size=4)
 
     await test_manager.process_document("tests/test_data/data1.pdf")
 

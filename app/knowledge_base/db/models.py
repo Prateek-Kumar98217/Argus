@@ -54,6 +54,26 @@ class Edge(Base):
     __table_args__ = (
         UniqueConstraint(
             "source_node_id", "target_node_id", "relationship_type",
-            name="unique_source_target_rel",
+        ),
+    )
+
+
+#Association table between node and chunks
+class NodeToChunks(Base):
+    __tablename__="node_chunks"
+
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    source_node_id: Mapped[UUID] = mapped_column(
+        ForeignKey('nodes.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    chunk_id: Mapped[UUID] = mapped_column(
+        ForeignKey('chunks.id', ondelete='CASCADE'),
+        nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "source_node_id", "chunk_id",
         ),
     )

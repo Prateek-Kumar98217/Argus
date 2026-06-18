@@ -1,6 +1,6 @@
 # Responsible to maintain in memory state of graph.
 
-from app.core.exceptions import NotInitializedError, NodeConflictError
+from app.core.exceptions import NotInitializedError
 from app.knowledge_base.db.engine import AsyncSessionLocal
 from app.knowledge_base.db.queries import EDGE_TYPES, NODE_TYPES, NODES
 
@@ -53,7 +53,8 @@ class GraphState:
         self._assert_initialized()
         
         if node_name in self.nodes:
-            raise NodeConflictError(f"Node Conflict: {node_name} already exists.")
+            return
+        
         self.nodes.add(node_name)
 
 
